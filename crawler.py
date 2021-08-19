@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import handler
 import os
@@ -5,26 +6,41 @@ import pandas as pd
 import re
 import time
 
+
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.support.select import Select
 
+# handle the characters that fail to convert xlsx file to csv .
 ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]|\n|\xa0')
 
 class Crawler:
+    def __init__(self,config_path):
+        self.config = handler.load_setting(config_path)
 
-    def __init__(self):
-        config = handler.load_setting()
+        # initial selenium driver
+        self.driver = None
+
+    def __enter__(self):
         # read the setting.ini data
-        self.link = config["Link"]
-        self.user = config["User"]
-        self.crawler = config["Crawler"]
+        self.link = self.config["Link"]
+        self.user = self.config["User"]
+        self.crawler = self.config["Crawler"]
 
         # read the history esh xlsx file data
         self.raw_dataframe = self._read_history_esh()
 
-        # initial selenium driver
-        self.driver = None
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.driver.close()
+        self.driver.quit()
+
+        if exc_val:
+            exit(1)
+        else:
+            exit(0)
+
 
     def _read_history_esh(self):
         history_xlsx_path = self.crawler["xlsx_name"]
@@ -36,16 +52,18 @@ class Crawler:
 
     def _clean_unless_data(self):
 
-        start_date = datetime.datetime.strptime(handler.date_condition()["start_date"], "%Y/%m/%d")
+        start_date = datetime.datetime.strptime(handler.date_condition(int(self.crawler["days_ago"]))["start_date"], "%Y/%m/%d")
         over_years_date = datetime.datetime.now() - datetime.timedelta(days=int(self.crawler["keep_years"]) * 365)
 
-        remove_index = self.raw_dataframe[(pd.to_datetime(self.raw_dataframe['發現日期']) > start_date)  | (pd.to_datetime(self.raw_dataframe['發現日期']) < over_years_date)].index
+        remove_index = self.raw_dataframe[(pd.to_datetime(self.raw_dataframe['發現日期']) > start_date) | (
+                    pd.to_datetime(self.raw_dataframe['發現日期']) < over_years_date)].index
         self.raw_dataframe.drop(remove_index, inplace=True)
 
     def _login(self):
         op = webdriver.ChromeOptions()
         # op.add_argument('headless')
         self.driver = webdriver.Chrome(options=op)
+        self.driver.set_page_load_timeout(self.crawler["time_out_seconds"])
 
         self.driver.get(self.link["esh_url"])
 
@@ -64,7 +82,8 @@ class Crawler:
         input_fab = Select(self.driver.find_element_by_id("ddlFab"))
         input_fab.select_by_value("118")
 
-        date_info = handler.date_condition()
+        date_info = handler.date_condition(int(self.crawler["days_ago"]))
+
 
         input_start_date = self.driver.find_element_by_id("str_tm1")
         input_start_date.send_keys(date_info["start_date"])
@@ -112,40 +131,51 @@ class Crawler:
                 rows.append(row)
 
         df = pd.DataFrame(rows, columns=column)
-        self._clean_unless_data()
+
+        if self.raw_dataframe.empty ==False:
+            self._clean_unless_data()
 
         # appended esh df to history dataframe
         new_dataframe = self.raw_dataframe.append(df, ignore_index=True)
         new_dataframe.to_excel(self.crawler["xlsx_name"], index=False)
 
-    def run_crawler(self):
-        try:
-            self._login()
-            self._esh_conditions()
-            self._esh_crawler()
-        except Exception as e:
-            raise Exception(str(e))
+    def _send_mail(self, detail_link: str):
 
-        finally:
-            self.driver.quit()
+
+        recipient_map = self.config["Recipient"]
+        recipient_list = [recipient_map[recipient] for recipient in recipient_map]
+
+        copy_map = self.config["Copy"]
+        copy_list = [copy_map[copy] for copy in copy_map]
+
+        MAIL_SUBJECT = '環安申請單逾期警告'
+
+        html = open("mail_templates.html", encoding='utf-8')
+        html_content = html.read()
+
+        soup = BeautifulSoup(html_content, 'html.parser')
+        soup.find(id="detail-link", href=True)["href"] = detail_link
+
+        mail_body = str(soup)
+
+        handler.send_outlook_html_mail(recipients=recipient_list, subject=MAIL_SUBJECT, body=mail_body,
+                                       send_or_display='SEND', copies=copy_list)
+
+    def run_crawler(self):
+
+        self._login()
+        self._esh_conditions()
+        self._esh_crawler()
+
 
     def send_alert_mail(self):
+
         history_dataframe = self._read_history_esh()
         month_ago_date = datetime.datetime.now() - datetime.timedelta(days=int(self.crawler["alert_days"]))
         alert_data = (history_dataframe[
             (history_dataframe["表單狀態"] != "已結案") & (pd.to_datetime(history_dataframe['發現日期']) > month_ago_date)])
         alert_mail_links = alert_data["詳細資訊"].values.tolist()
-        handler.send_mail(alert_mail_links[2])
 
-
-if __name__ == "__main__":
-
-    crawler = Crawler()
-    crawler.send_alert_mail()
-
-
-
-
-
-
+        # TODO: modify to the for-loop mail
+        self._send_mail(alert_mail_links[2])
 

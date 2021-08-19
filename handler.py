@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 import configparser
 import datetime
 import os
@@ -7,26 +6,20 @@ import subprocess
 import win32com.client
 
 
-CONFIG_PATH = "setting.ini"
-
-
-def load_setting() -> configparser:
+def load_setting(config_path:str) -> configparser:
     config = configparser.ConfigParser()
-    config.read(CONFIG_PATH)
+    #assert os.path.exists(config_path), f"Please verify the '{config_path}' existed. "
+    config.read(config_path)
     return config
 
 
-def date_condition() -> dict[str, str]:
-    days_ago = int(load_setting()["Crawler"]["days_ago"])
-
+def date_condition(days_ago:int) -> dict[str, str]:
     assert isinstance(days_ago, int), "Your [days ago] values had some error."
     now = datetime.datetime.now()
 
     # now = datetime.datetime.strptime('2021/08/01', "%Y/%m/%d")
     ago = datetime.timedelta(days=int(days_ago))
-
     end_date = now.strftime("%Y/%m/%d")
-
     start_date = (now - ago).strftime("%Y/%m/%d")
 
     return {"start_date": start_date, "end_date": end_date}
@@ -79,24 +72,3 @@ def faster_read_excel(xlsx_path: str, usecols: list[str] = None) -> pd:
         pass
 
     return dataframe
-
-def send_mail(detail_link:str):
-    setting = load_setting()
-    recipient_map = setting["Recipient"]
-    recipient_list = [recipient_map[recipient] for recipient in recipient_map]
-
-    copy_map = setting["Copy"]
-    copy_list = [copy_map[copy] for copy in copy_map]
-
-    MAIL_SUBJECT = '環安申請單逾期警告'
-
-    html = open("mail_templates.html", encoding='utf-8')
-    html_content = html.read()
-
-    soup = BeautifulSoup(html_content, 'html.parser')
-    soup.find(id="detail-link", href=True)["href"] = detail_link
-
-    mail_body = str(soup)
-
-    send_outlook_html_mail(recipients=recipient_list, subject=MAIL_SUBJECT, body=mail_body,
-                                       send_or_display='SEND', copies=copy_list)
