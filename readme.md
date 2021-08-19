@@ -3,7 +3,7 @@
 操作步驟:
 
 Step 1:
-可以參考之前的方式安裝，或者請it協助安裝
+可以參考之前的proxy方式安裝，或者請it協助安裝
 ```commandline
 $ pip install -r requirements.txt
 ```
@@ -31,3 +31,18 @@ xlsx_name = <Your xlsx path( notice: only allow saving it on "U" slot.) >
 ..
 ```
 
+Step 3:利用cmd-line tool執行不同的function，cmd-line tool說明如下，特別注意action參數僅支援crawler和alert兩個參數。
+```commandline
+
+$ python main.py --help
+
+       USAGE: main.py [flags]
+flags:
+
+main.py:
+  --action: running specific action [crawler|alert].
+    (default: 'crawler')
+  --config: the configuration path.
+    (default: 'setting.ini')
+
+```
