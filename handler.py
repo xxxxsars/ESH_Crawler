@@ -5,6 +5,7 @@ import pandas as pd
 import subprocess
 import win32com.client
 
+from xlsx2csv import Xlsx2csv
 
 def load_setting(config_path:str) -> configparser:
     config = configparser.ConfigParser()
@@ -57,9 +58,8 @@ def send_outlook_html_mail(recipients: list[str], subject: str = 'No Subject', b
 def faster_read_excel(xlsx_path: str, usecols: list[str] = None) -> pd:
     tmp_csv = "tmp.csv"
 
-    call = ["python", "./xlsx2csv.py", xlsx_path, tmp_csv]
     try:
-        subprocess.call(call)  # On Windows use shell=True
+        Xlsx2csv(xlsx_path).convert(tmp_csv, sheetid=1)
     except:
         print('Failed with {}'.format(xlsx_path))
 
@@ -72,3 +72,4 @@ def faster_read_excel(xlsx_path: str, usecols: list[str] = None) -> pd:
         pass
 
     return dataframe
+

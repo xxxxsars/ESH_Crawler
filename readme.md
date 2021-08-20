@@ -1,15 +1,10 @@
 ### AUO環安網頁爬蟲
 
-操作步驟:
+一般使用者操作步驟:
 
 Step 1:
-可以參考之前的proxy方式安裝，或者請it協助安裝
-```commandline
-$ pip install -r requirements.txt
-```
+進入到dist目錄(預編譯好程式)，修改setting.ini參數
 
-Step 2:
-修改setting_sample.ini檔名為setting.ini，並修改參數
 ```commandline
 #重要參數說明
 
@@ -31,10 +26,10 @@ xlsx_name = <Your xlsx path( notice: only allow saving it on "U" slot.) >
 ..
 ```
 
-Step 3:利用cmd-line tool執行不同的function，cmd-line tool說明如下，特別注意action參數僅支援crawler和alert兩個參數。
+Step 2:利用cmd-line tool執行不同的function，cmd-line tool說明如下，特別注意action參數僅支援crawler和alert兩個參數。
 ```commandline
-
-$ python main.py --help
+$ cd dist
+$ main.exe --help
 
        USAGE: main.py [flags]
 flags:
@@ -46,3 +41,22 @@ main.py:
     (default: 'setting.ini')
 
 ```
+
+
+開發者操作步驟:
+
+Step 1:
+可以參考之前的proxy方式安裝，或者請it協助安裝
+```commandline
+$ pip install -r requirements.txt
+```
+
+Step 2:修改程式碼後，重新編譯exe
+**注意***:若有新增套件，在pyinstaller有可能會無法hook到，請自行抓取套件相關的dll檔案放到，package_lib目錄中
+```commandline
+$ pyinstaller -D main.spec
+```
+
+Step 3:會在dist目錄下看到重新編譯好的exe
+
+Step 4:參照上面"一般使用者操作步驟"，將修改後的setting.ini放到dist目錄即可使用

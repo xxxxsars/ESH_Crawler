@@ -1,6 +1,5 @@
 from absl import app
 from absl import flags
-
 import crawler as cw
 
 # set the cmd-line tool parameters.
