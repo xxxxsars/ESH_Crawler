@@ -10,7 +10,7 @@ flags.DEFINE_string('action', "crawler", 'running specific action [crawler|alert
 
 class ArgumentException(Exception): pass
 
-
+#todo add debug mode (crawler will open browser)
 def main(argv):
     with cw.Crawler(FLAGS.config) as crawler:
         action = FLAGS.action

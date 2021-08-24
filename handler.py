@@ -63,7 +63,11 @@ def faster_read_excel(xlsx_path: str, usecols: list[str] = None) -> pd:
     except:
         print('Failed with {}'.format(xlsx_path))
 
-    dataframe = pd.read_csv(tmp_csv, usecols=usecols)
+    try:
+        dataframe = pd.read_csv(tmp_csv, usecols=usecols)
+    except:
+        dataframe = pd.DataFrame()
+
 
     # if removed tmp file had error will ignore it.
     try:
@@ -72,4 +76,16 @@ def faster_read_excel(xlsx_path: str, usecols: list[str] = None) -> pd:
         pass
 
     return dataframe
+
+
+def read_history_esh(config_path:str):
+    crawler_config = load_setting(config_path)["Crawler"]
+
+    history_xlsx_path = crawler_config["xlsx_name"]
+    if os.path.exists(history_xlsx_path):
+        raw_dataframe = faster_read_excel(crawler_config["xlsx_name"])
+        return raw_dataframe
+    else:
+        return pd.DataFrame()
+
 
