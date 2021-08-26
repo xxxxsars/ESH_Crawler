@@ -7,6 +7,10 @@ Step 1:
 
 ```commandline
 #重要參數說明
+[System]
+lunch_date = <The system lunch date> #該程式上線時間，在這之後的申請單才作警告動作 格式如下:2021/08/24
+mail_suffix = @auo123.com #email地址，因怕測試時會干擾到收件者，因此先定義為錯誤的mail address實際上線改為正確address
+
 
 #user 區塊請輸入你的auo帳號密碼，須完整包含mail address
 [User]
@@ -17,29 +21,37 @@ password = <Your AUO password>>
 [Crawler]
 ...
 xlsx_name = <Your xlsx path( notice: only allow saving it on "U" slot.) >
-
-#Recipient(收件者)至少要有一個，可支援多個收件者，recipient1 recipient2... 做區隔即可
-[Recipient]
-..
-#多個copy(cc副本)，同理用copy1 copy2區隔
-[Copy]
 ..
 ```
 
-Step 2:利用cmd-line tool執行不同的function，cmd-line tool說明如下，特別注意action參數僅支援crawler和alert兩個參數。
+Step 2:利用cmd-line tool執行不同的function，cmd-line tool說明如下，特別注意action參數僅支援crawler和mail兩個參數。
 ```commandline
 $ cd dist
-$ main.exe --help
+$ python main.exe --help
 
        USAGE: main.py [flags]
 flags:
 
 main.py:
-  --action: running specific action [crawler|alert].
+  --action: running specific action [crawler|mail].
     (default: 'crawler')
   --config: the configuration path.
     (default: 'setting.ini')
+  --[no]debug: Turn on/off the debug mode (crawler will show the browser).
+    (default: 'false')
+  --[no]log: Turn logging on/off.
+    (default: 'false')
 
+```
+
+Step 3:建議開啟log mode如在開發測試功能可以開啟debug mode，以下為指令範例
+```commandline
+$ main.exe --log true --debug true --action crawler  #這個指令會紀錄log，並在執行時顯示瀏覽器，執行的動作為爬蟲
+$ main.exe --log true --debug false --action mail    #這個指令會紀錄log，在執行時不顯示瀏覽器，執行的動作為逾期警告信
+
+#windows排成建議設置指令如下(建議都開啟log mode，debug mode則不需要開啟):
+$ main.exe --log true --debug false --action crawler
+$ main.exe --log true --debug false --action mail
 ```
 
 

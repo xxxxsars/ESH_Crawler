@@ -12,10 +12,11 @@ class EmptyDataFrameException(Exception): pass
 class Alarm_mail:
     def __init__(self, config_path):
         self.config_path = config_path
-        self.config = handler.load_setting(config_path)
+        self.config = handler.load_setting(self.config_path)
         self.crawler = self.config["Crawler"]
         self.detail_url_prefix = self.config["Link"]["detail_url"]
-        self.luncah_date = datetime.datetime.strptime(self.config["System"]["lunch_date"], "%Y/%m/%d")
+        self.lunch_date = datetime.datetime.strptime(self.config["System"]["lunch_date"], "%Y/%m/%d")
+        self.mail_suffix = self.config["System"]["mail_suffix"]
 
         self.history_dataframe = handler.read_history_esh(self.config_path)
 
@@ -47,16 +48,13 @@ class Alarm_mail:
         alert_data = self.history_dataframe[
             (self.history_dataframe["表單狀態"] != "已結案") & (
                     pd.to_datetime(self.history_dataframe['發現日期']) < month_ago_date) & (
-                    pd.to_datetime(self.history_dataframe['發現日期']) > self.luncah_date)]
+                    pd.to_datetime(self.history_dataframe['發現日期']) > self.lunch_date)]
         system_ids = alert_data["異常單系統編號"].values.tolist()
-        # todo setting the corrent mail
-        recipient_list = [department + "@auo123.com" for department in alert_data["責任單位"].values.tolist()]
-        if alert_data.empty == False:
+        recipient_list = [department + self.mail_suffix for department in alert_data["責任單位"].values.tolist()]
+        if not alert_data.empty:
             for index in range(len(alert_data)):
-                # todo remove index condition
-                if index == 0:
-                    detail_url = self.detail_url_prefix + str(system_ids[index])
-                    self._mail(mail_subject, "overdue", detail_url, [recipient_list[index]])
+                detail_url = self.detail_url_prefix + str(system_ids[index])
+                self._mail(mail_subject, "overdue", detail_url, [recipient_list[index]])
         else:
             print("All esh form had been done.")
 
@@ -64,15 +62,14 @@ class Alarm_mail:
         mail_subject = '環安申請單格式錯誤警告'
         alert_data = (self.history_dataframe[
             (self.history_dataframe["關鍵字"] != "ok") & (
-                    pd.to_datetime(self.history_dataframe['發現日期']) > self.luncah_date)])
-        recipient_list = [department + "@auo123.com" for department in alert_data["提出單位"].values.tolist()]
+                    pd.to_datetime(self.history_dataframe['發現日期']) > self.lunch_date)])
+        recipient_list = [department + self.mail_suffix for department in alert_data["提出單位"].values.tolist()]
         system_ids = alert_data["異常單系統編號"].values.tolist()
 
-        if alert_data.empty == False:
+        if not alert_data.empty:
             for index in range(len(alert_data)):
-                if index == 0:
-                    detail_url = self.detail_url_prefix + str(system_ids[index])
-                    self._mail(mail_subject, "wrong_format", detail_url, [recipient_list[index]])
+                detail_url = self.detail_url_prefix + str(system_ids[index])
+                self._mail(mail_subject, "wrong_format", detail_url, [recipient_list[index]])
         else:
             print("All esh table formats are correct.")
 

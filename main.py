@@ -24,14 +24,14 @@ class ArgumentException(Exception): pass
 def main(argv):
     config_path = FLAGS.config
     log_mode = FLAGS.log
-    mail = am.Alarm_mail(config_path)
+
 
     with cw.Crawler(config_path,FLAGS.debug) as crawler:
         action = FLAGS.action
         if action == "crawler":
             try:
                 crawler.run_crawler()
-                mail.send_wrong_format_mail()
+                am.Alarm_mail(config_path).send_wrong_format_mail()
             except Exception as e:
                 if log_mode:
                     logging.error("Crawler Error:" + traceback.format_exc())
@@ -41,7 +41,7 @@ def main(argv):
 
         elif action == "mail":
             try:
-                mail.send_overdue_mail()
+                am.Alarm_mail(config_path).send_overdue_mail()
             except Exception as e:
                 if log_mode:
                     logging.error("Overdue Mail Error:" + traceback.format_exc())
