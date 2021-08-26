@@ -1,38 +1,35 @@
 import datetime
 import handler
-import json
 import os
 import pandas as pd
-import re
-import sys
-import time
 
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.support.select import Select
+
 
 class EmptyDataFrameException(Exception): pass
 
 
-LUNCH_DATE = "2021/08/24"
-
-class Alarm_mail():
-    def __init__(self,config_path):
+class Alarm_mail:
+    def __init__(self, config_path):
         self.config_path = config_path
         self.config = handler.load_setting(config_path)
         self.crawler = self.config["Crawler"]
+        self.detail_url_prefix = self.config["Link"]["detail_url"]
+        self.luncah_date = datetime.datetime.strptime(self.config["System"]["lunch_date"], "%Y/%m/%d")
 
-    def _overdue_mail(self, detail_link: str):
+        self.history_dataframe = handler.read_history_esh(self.config_path)
 
-        recipient_map = self.config["Recipient"]
-        recipient_list = [recipient_map[recipient] for recipient in recipient_map]
+        if self.history_dataframe.empty:
+            raise EmptyDataFrameException(f'Please check your {self.crawler["xlsx_name"]} existed or had data.')
 
-        copy_map = self.config["Copy"]
-        copy_list = [copy_map[copy] for copy in copy_map]
+    def _mail(self, mail_subject: str, mail_type: str, detail_link: str, recipient_list: list[str]):
 
-        MAIL_SUBJECT = '環安申請單逾期警告'
+        html_path = f"templates/{mail_type}.html"
 
-        html = open("mail_templates.html", encoding='utf-8')
+        if not os.path.exists(html_path):
+            raise FileExistsError(f"Your '{html_path}' not existed. ")
+
+        html = open(html_path, encoding='utf-8')
         html_content = html.read()
 
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -40,32 +37,46 @@ class Alarm_mail():
 
         mail_body = str(soup)
 
-        handler.send_outlook_html_mail(recipients=recipient_list, subject=MAIL_SUBJECT, body=mail_body,
-                                       send_or_display='SEND', copies=copy_list)
-
+        handler.send_outlook_html_mail(recipients=recipient_list, subject=mail_subject, body=mail_body,
+                                       send_or_display='SEND')
 
     def send_overdue_mail(self):
-
-        history_dataframe = handler.read_history_esh(self.config_path)
-        if history_dataframe.empty:
-            raise EmptyDataFrameException(f'Please check your {self.crawler["xlsx_name"]} existed or had data.')
+        mail_subject = '環安申請單逾期警告'
 
         month_ago_date = datetime.datetime.now() - datetime.timedelta(days=int(self.crawler["alert_days"]))
-        alert_data = (history_dataframe[
-            (history_dataframe["表單狀態"] != "已結案") & (pd.to_datetime(history_dataframe['發現日期']) < month_ago_date)])
-        alert_mail_links = alert_data["詳細資訊"].values.tolist()
-        print(alert_mail_links)
-        if alert_mail_links:
-            # TODO: modify to the for-loop mail
-            self._send_mail(alert_mail_links[0])
+        alert_data = self.history_dataframe[
+            (self.history_dataframe["表單狀態"] != "已結案") & (
+                    pd.to_datetime(self.history_dataframe['發現日期']) < month_ago_date) & (
+                    pd.to_datetime(self.history_dataframe['發現日期']) > self.luncah_date)]
+        system_ids = alert_data["異常單系統編號"].values.tolist()
+        # todo setting the corrent mail
+        recipient_list = [department + "@auo123.com" for department in alert_data["責任單位"].values.tolist()]
+        if alert_data.empty == False:
+            for index in range(len(alert_data)):
+                # todo remove index condition
+                if index == 0:
+                    detail_url = self.detail_url_prefix + str(system_ids[index])
+                    self._mail(mail_subject, "overdue", detail_url, [recipient_list[index]])
         else:
             print("All esh form had been done.")
 
-        # TODO: if saved excel file failed, it will save another file name with timestamp
+    def send_wrong_format_mail(self):
+        mail_subject = '環安申請單格式錯誤警告'
+        alert_data = (self.history_dataframe[
+            (self.history_dataframe["關鍵字"] != "ok") & (
+                    pd.to_datetime(self.history_dataframe['發現日期']) > self.luncah_date)])
+        recipient_list = [department + "@auo123.com" for department in alert_data["提出單位"].values.tolist()]
+        system_ids = alert_data["異常單系統編號"].values.tolist()
+
+        if alert_data.empty == False:
+            for index in range(len(alert_data)):
+                if index == 0:
+                    detail_url = self.detail_url_prefix + str(system_ids[index])
+                    self._mail(mail_subject, "wrong_format", detail_url, [recipient_list[index]])
+        else:
+            print("All esh table formats are correct.")
 
 
-
-if __name__ =="__main__":
-
+if __name__ == "__main__":
     a = Alarm_mail("setting.ini")
-    a.send_overdue_mail()
+    a.send_wrong_format_mail()
