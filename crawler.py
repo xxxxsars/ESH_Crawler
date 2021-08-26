@@ -16,8 +16,10 @@ ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]|\n|\xa0
 
 
 class Crawler:
-    def __init__(self, config_path):
+    def __init__(self, config_path, debug=False):
+        # Debug mode will show the browser and didn't close the final browser window
         self.config_path = config_path
+        self.debug = debug
         self.config = handler.load_setting(config_path)
 
         # initial selenium driver
@@ -35,9 +37,9 @@ class Crawler:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # if self.driver:
-        #     self.driver.close()
-        #     self.driver.quit()
+        if self.driver and self.debug == False:
+            self.driver.close()
+            self.driver.quit()
         if exc_type == None and exc_val == None and exc_tb == None:
             sys.exit(0)
 
@@ -53,7 +55,8 @@ class Crawler:
 
     def _login(self):
         op = webdriver.ChromeOptions()
-        # op.add_argument('headless')
+        if self.debug == False:
+            op.add_argument('headless')
         self.driver = webdriver.Chrome(options=op)
         self.driver.set_page_load_timeout(self.crawler["time_out_seconds"])
 
@@ -98,7 +101,6 @@ class Crawler:
             table_element = soup.find(id="QualityAbnorGrid")
             if table_element:
                 break
-        detail_url_prefix = "http://augic8/ESH/ESH/ESH_Upd.aspx?AbnormalityID="
 
         column: list[str] = []
         rows: list[str] = []
@@ -167,11 +169,12 @@ class Crawler:
         if self.raw_dataframe.empty == False:
             self._clean_unless_data()
 
+        # TODO: if saved excel file failed, it will save another file name with timestamp
         # appended esh df to history dataframe
         new_dataframe = self.raw_dataframe.append(crawler_df, ignore_index=True)
         new_dataframe.to_excel(self.crawler["xlsx_name"], sheet_name='ESH_RawData', index=False)
 
-
+        print("crawler running had been done!")
 
 if __name__ == "__main__":
     with Crawler("setting.ini") as cw:
