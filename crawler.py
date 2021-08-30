@@ -9,7 +9,10 @@ import time
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # handle the characters that fail to convert xlsx file to csv .
 ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]|\n|\xa0')
@@ -30,6 +33,7 @@ class Crawler:
         self.link = self.config["Link"]
         self.user = self.config["User"]
         self.crawler = self.config["Crawler"]
+        self.timeout = int(self.crawler["time_out_seconds"])
 
         # read the history esh xlsx file data
         self.raw_dataframe = handler.read_history_esh(self.crawler["xlsx_name"])
@@ -58,31 +62,45 @@ class Crawler:
         if self.debug == False:
             op.add_argument('headless')
         self.driver = webdriver.Chrome(options=op)
-        self.driver.set_page_load_timeout(self.crawler["time_out_seconds"])
+
+        self.driver.set_page_load_timeout(self.timeout)
 
         self.driver.get(self.link["esh_url"])
 
-        input_account = self.driver.find_element_by_id("txtInputId")
+        input_account = WebDriverWait(self.driver, self.timeout).until(
+            EC.presence_of_element_located((By.ID, "txtInputId"))
+        )
         input_account.send_keys(self.user["account"])
 
-        input_password = self.driver.find_element_by_id("txtPassword")
+        input_password = WebDriverWait(self.driver, self.timeout).until(
+            EC.presence_of_element_located((By.ID, "txtPassword"))
+        )
         input_password.send_keys(self.user["password"])
 
-        btn_login = self.driver.find_element_by_id("ext-gen22")
+        btn_login = WebDriverWait(self.driver, self.timeout).until(
+            EC.presence_of_element_located((By.ID, "ext-gen22"))
+        )
+
         btn_login.click()
 
-        time.sleep(2)
-
     def _esh_conditions(self):
-        input_fab = Select(self.driver.find_element_by_id("ddlFab"))
+        input_fab = Select(WebDriverWait(self.driver, self.timeout).until(
+            EC.presence_of_element_located((By.ID, "ddlFab"))
+        ))
+
         input_fab.select_by_value("117")
 
         date_info = handler.date_condition(int(self.crawler["days_ago"]))
 
-        input_start_date = self.driver.find_element_by_id("str_tm1")
+        input_start_date = WebDriverWait(self.driver, self.timeout).until(
+            EC.presence_of_element_located((By.ID, "str_tm1"))
+        )
+
         input_start_date.send_keys(date_info["start_date"])
 
-        input_start_date = self.driver.find_element_by_id("str_tm2")
+        input_start_date = WebDriverWait(self.driver, self.timeout).until(
+            EC.presence_of_element_located((By.ID, "str_tm2"))
+        )
         input_start_date.send_keys(date_info["end_date"])
 
         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
@@ -91,7 +109,9 @@ class Crawler:
             input_status = Select(self.driver.find_element_by_id("ddlStatus"))
             input_status.select_by_value(option_value)
 
-        self.driver.find_element_by_id("btnSearch").click()
+        WebDriverWait(self.driver, self.timeout).until(
+            EC.presence_of_element_located((By.ID, "btnSearch"))
+        ).click()
 
     def _esh_crawler(self):
         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
