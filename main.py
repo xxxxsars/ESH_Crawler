@@ -18,26 +18,24 @@ flags.DEFINE_string('config', "setting.ini", 'the configuration path.')
 flags.DEFINE_string('action', "crawler", 'running specific action [crawler|mail].')
 
 
-
 class ArgumentException(Exception): pass
+
 
 def main(argv):
     config_path = FLAGS.config
     log_mode = FLAGS.log
 
-
-    with cw.Crawler(config_path,FLAGS.debug) as crawler:
+    with cw.Crawler(config_path, FLAGS.debug) as crawler:
         action = FLAGS.action
         if action == "crawler":
             try:
-                crawler.run_crawler()
-                am.Alarm_mail(config_path).send_wrong_format_mail()
+                history_xlsx_path = crawler.run_crawler()
+                am.Alarm_mail(config_path, history_xlsx_path).send_wrong_format_mail()
             except Exception as e:
                 if log_mode:
                     logging.error("Crawler Error:" + traceback.format_exc())
                 else:
                     print(e)
-
 
         elif action == "mail":
             try:

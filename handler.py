@@ -78,14 +78,17 @@ def faster_read_excel(xlsx_path: str, usecols: list[str] = None) -> pd:
     return dataframe
 
 
-def read_history_esh(config_path:str):
-    crawler_config = load_setting(config_path)["Crawler"]
+def read_history_esh(history_xlsx_path:str):
 
-    history_xlsx_path = crawler_config["xlsx_name"]
     if os.path.exists(history_xlsx_path):
-        raw_dataframe = faster_read_excel(crawler_config["xlsx_name"])
+        raw_dataframe = faster_read_excel(history_xlsx_path)
         return raw_dataframe
     else:
         return pd.DataFrame()
 
+
+
+
+if __name__ =="__main__":
+    import shutil
 

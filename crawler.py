@@ -32,7 +32,7 @@ class Crawler:
         self.crawler = self.config["Crawler"]
 
         # read the history esh xlsx file data
-        self.raw_dataframe = handler.read_history_esh(self.config_path)
+        self.raw_dataframe = handler.read_history_esh(self.crawler["xlsx_name"])
 
         return self
 
@@ -172,10 +172,19 @@ class Crawler:
         # TODO: if saved excel file failed, it will save another file name with timestamp
         # appended esh df to history dataframe
         new_dataframe = self.raw_dataframe.append(crawler_df, ignore_index=True)
-        new_dataframe.to_excel(self.crawler["xlsx_name"], sheet_name='ESH_RawData', index=False)
 
-        print("crawler running had been done!")
+        try:
+            new_dataframe.to_excel(self.crawler["xlsx_name"], sheet_name='ESH_RawData', index=False)
+        except Exception as e:
+            split_path = os.path.splitext(self.crawler["xlsx_name"])
+            tmp_file_name = f'{split_path[0]}_{"{:.0f}".format(datetime.datetime.now().timestamp())}{split_path[1]}'
+            new_dataframe.to_excel(tmp_file_name, sheet_name='ESH_RawData', index=False)
+            return tmp_file_name
 
-if __name__ == "__main__":
-    with Crawler("setting.ini") as cw:
-        cw.run_crawler()
+        finally:
+            print("crawler running had been done!")
+        return self.crawler["xlsx_name"]
+
+# if __name__ == "__main__":
+# with Crawler("setting.ini") as cw:
+#     cw.run_crawler()

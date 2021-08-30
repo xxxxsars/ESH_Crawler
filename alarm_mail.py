@@ -10,15 +10,20 @@ class EmptyDataFrameException(Exception): pass
 
 
 class Alarm_mail:
-    def __init__(self, config_path):
+    def __init__(self, config_path, history_xlsx_path=None):
         self.config_path = config_path
+        self.history_xlsx_path = history_xlsx_path
         self.config = handler.load_setting(self.config_path)
         self.crawler = self.config["Crawler"]
         self.detail_url_prefix = self.config["Link"]["detail_url"]
         self.lunch_date = datetime.datetime.strptime(self.config["System"]["lunch_date"], "%Y/%m/%d")
         self.mail_suffix = self.config["System"]["mail_suffix"]
 
-        self.history_dataframe = handler.read_history_esh(self.config_path)
+        # If there is no default path, the 'xlsx name' parameter in the configuration file will be read.
+        if history_xlsx_path is None:
+            history_xlsx_path = self.crawler['xlsx_name']
+
+        self.history_dataframe = handler.read_history_esh(self.history_xlsx_path)
 
         if self.history_dataframe.empty:
             raise EmptyDataFrameException(f'Please check your {self.crawler["xlsx_name"]} existed or had data.')
