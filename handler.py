@@ -87,8 +87,3 @@ def read_history_esh(history_xlsx_path:str):
         return pd.DataFrame()
 
 
-
-
-if __name__ =="__main__":
-    import shutil
-

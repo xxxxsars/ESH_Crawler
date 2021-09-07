@@ -47,11 +47,11 @@ main.py:
 Step 3:建議開啟log mode如在開發測試功能可以開啟debug mode，以下為指令範例
 ```commandline
 $ main.exe --log true --debug true --action crawler  #這個指令會紀錄log，並在執行時顯示瀏覽器，執行的動作為爬蟲
-$ main.exe --log true --debug false --action mail    #這個指令會紀錄log，在執行時不顯示瀏覽器，執行的動作為逾期警告信
+$ main.exe --log true --action mail    #這個指令會紀錄log，在執行時不顯示瀏覽器，執行的動作為逾期警告信 (沒有帶debug就會設置為False，log參數同)
 
 #windows排成建議設置指令如下(建議都開啟log mode，debug mode則不需要開啟):
-$ main.exe --log true --debug false --action crawler
-$ main.exe --log true --debug false --action mail
+$ main.exe --log true --action crawler
+$ main.exe --log true --action mail
 ```
 
 

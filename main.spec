@@ -37,4 +37,6 @@ import shutil
 shutil.copyfile('setting_sample.ini', 'dist/setting.ini')
 shutil.copyfile('chromedriver.exe', 'dist/chromedriver.exe')
 shutil.copyfile('keyword.json', 'dist/keyword.json')
-shutil.copytree('templates', 'dist/templates')
+
+if not os.path.exists('dist/templates'):
+    shutil.copytree('templates', 'dist/templates')

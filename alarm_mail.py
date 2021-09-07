@@ -21,7 +21,7 @@ class Alarm_mail:
 
         # If there is no default path, the 'xlsx name' parameter in the configuration file will be read.
         if history_xlsx_path is None:
-            history_xlsx_path = self.crawler['xlsx_name']
+            self.history_xlsx_path = self.crawler['xlsx_name']
 
         self.history_dataframe = handler.read_history_esh(self.history_xlsx_path)
 

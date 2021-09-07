@@ -63,8 +63,10 @@ class Crawler:
             op.add_argument('headless')
         self.driver = webdriver.Chrome(options=op)
 
-        self.driver.set_page_load_timeout(self.timeout)
+        # self.driver.set_page_load_timeout(self.timeout)
 
+        # if page hang out will Interrupt selenium program.
+        self.driver.set_script_timeout(self.timeout)
         self.driver.get(self.link["esh_url"])
 
         input_account = WebDriverWait(self.driver, self.timeout).until(
@@ -189,7 +191,6 @@ class Crawler:
         if self.raw_dataframe.empty == False:
             self._clean_unless_data()
 
-        # TODO: if saved excel file failed, it will save another file name with timestamp
         # appended esh df to history dataframe
         new_dataframe = self.raw_dataframe.append(crawler_df, ignore_index=True)
 
@@ -205,6 +206,4 @@ class Crawler:
             print("crawler running had been done!")
         return self.crawler["xlsx_name"]
 
-# if __name__ == "__main__":
-# with Crawler("setting.ini") as cw:
-#     cw.run_crawler()
+
