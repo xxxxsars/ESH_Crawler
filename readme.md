@@ -3,7 +3,7 @@
 一般使用者操作步驟:
 
 Step 1:
-進入到dist目錄(預編譯好程式)，修改setting.ini參數
+到[release]( http://tcaigitlab.corpnet.auo.com/mfg/l3d/01/esh_crawler/-/releases "release")下載，並修改setting.ini參數
 
 ```commandline
 #重要參數說明
