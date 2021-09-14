@@ -36,7 +36,7 @@ class Crawler:
         self.timeout = int(self.crawler["time_out_seconds"])
 
         # read the history esh xlsx file data
-        self.raw_dataframe = handler.read_history_esh(self.crawler["xlsx_name"])
+        self.raw_dataframe = handler.read_history_esh(self.config_path)
 
         return self
 
@@ -193,6 +193,7 @@ class Crawler:
 
         # appended esh df to history dataframe
         new_dataframe = self.raw_dataframe.append(crawler_df, ignore_index=True)
+
 
         try:
             new_dataframe.to_excel(self.crawler["xlsx_name"], sheet_name='ESH_RawData', index=False)

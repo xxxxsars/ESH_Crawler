@@ -1,20 +1,23 @@
 import configparser
 import datetime
 import os
+import re
+import requests
 import pandas as pd
 import subprocess
 import win32com.client
 
 from xlsx2csv import Xlsx2csv
 
-def load_setting(config_path:str) -> configparser:
+
+def load_setting(config_path: str) -> configparser:
     config = configparser.ConfigParser()
-    #assert os.path.exists(config_path), f"Please verify the '{config_path}' existed. "
+    assert os.path.exists(config_path), f"Please verify the '{config_path}' existed. "
     config.read(config_path)
     return config
 
 
-def date_condition(days_ago:int) -> dict[str, str]:
+def date_condition(days_ago: int) -> dict[str, str]:
     assert isinstance(days_ago, int), "Your [days ago] values had some error."
     now = datetime.datetime.now()
 
@@ -27,7 +30,7 @@ def date_condition(days_ago:int) -> dict[str, str]:
 
 
 def send_outlook_html_mail(recipients: list[str], subject: str = 'No Subject', body: str = 'Blank',
-                           send_or_display: str = 'Display', copies: list[str] = None):
+                           send_or_display: str = 'Display', copies: list[str] = None) -> None:
     if len(recipients) > 0 and isinstance(recipients, list):
         outlook = win32com.client.Dispatch("Outlook.Application")
         ol_msg = outlook.CreateItem(0)
@@ -78,12 +81,54 @@ def faster_read_excel(xlsx_path: str, usecols: list[str] = None) -> pd:
     return dataframe
 
 
-def read_history_esh(history_xlsx_path:str):
-
-    if os.path.exists(history_xlsx_path):
-        raw_dataframe = faster_read_excel(history_xlsx_path)
-        return raw_dataframe
+def read_history_esh(config_path: str):
+    files = show_all_xlsx(config_path)
+    if files:
+        merge_df = pd.DataFrame()
+        for file in show_all_xlsx('setting.ini'):
+            merge_df = pd.concat([merge_df, faster_read_excel(file)])
+        # remove duplicates data
+        merge_df = merge_df.drop_duplicates(ignore_index=True, subset=['異常單系統編號'], keep='last')
+        return merge_df
     else:
         return pd.DataFrame()
 
 
+def upload_files(config_path: str) -> None:
+    config = load_setting(config_path)
+    url = config["Link"]["upload_url"]
+    file_path = config["Crawler"]["xlsx_name"]
+
+    if os.path.exists(file_path):
+        files = {"files": open(file_path, 'rb')}
+        data = {"site": "L3D", "path": "M2"}
+        res = requests.post(url, files=files, data=data)
+        assert res.status_code == 202, "Upload file had error."
+    else:
+        raise FileExistsError(f"Your {file_path} was not existed.")
+
+
+def show_all_xlsx(config_path: str) -> list[str]:
+    xlsx_files: list[str] = []
+
+    config = load_setting(config_path)
+    split_file_path = os.path.split(config["Crawler"]["xlsx_name"])
+
+    root_path = split_file_path[0]
+    file_prefix = os.path.splitext(split_file_path[1])[0]
+
+    # enhance the performance of iterative files
+    _, _, files = next(os.walk(root_path))
+
+    for f in files:
+        full_path = os.path.join(root_path, f)
+        if os.path.isfile(full_path) and re.search(f'^{file_prefix}', f) and re.search("xlsx$", f):
+            xlsx_files.append(full_path)
+
+    assert len(xlsx_files) > 0, "Your root path didn't had any matched files."
+
+    return xlsx_files
+
+
+if __name__ == "__main__":
+    print(load_setting("setting.ini"))

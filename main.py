@@ -6,6 +6,7 @@ from absl import app
 from absl import flags
 import crawler as cw
 import alarm_mail as am
+import handler
 
 logging.basicConfig(filename='esh.log', encoding='utf-8', level=logging.DEBUG, format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -29,8 +30,12 @@ def main(argv):
         action = FLAGS.action
         if action == "crawler":
             try:
+                # run the  crawler program.
                 history_xlsx_path = crawler.run_crawler()
+                # send the wrong format mail
                 am.Alarm_mail(config_path, history_xlsx_path).send_wrong_format_mail()
+                # upload the result file to EDA ftp
+                handler.upload_files(config_path)
             except Exception as e:
                 if log_mode:
                     logging.error("Crawler Error:" + traceback.format_exc())

@@ -23,7 +23,7 @@ class Alarm_mail:
         if history_xlsx_path is None:
             self.history_xlsx_path = self.crawler['xlsx_name']
 
-        self.history_dataframe = handler.read_history_esh(self.history_xlsx_path)
+        self.history_dataframe = handler.read_history_esh(self.config_path)
 
         if self.history_dataframe.empty:
             raise EmptyDataFrameException(f'Please check your {self.crawler["xlsx_name"]} existed or had data.')
