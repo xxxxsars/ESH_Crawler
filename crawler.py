@@ -161,14 +161,11 @@ class Crawler:
             allow_keyword_prefix = list(json.load(fin).keys())
             description_status = []
             for description in (crawler_df["異常現象敍述"]):
-                match = re.search("^(\[.+\])", description)
-                if match:
-                    if match.group(0) in allow_keyword_prefix:
-                        description_status.append("ok")
-                    else:
-                        description_status.append("NG-關建字")
+                # if any keywords in description will pass this condition.
+                if( [ key_word  for key_word in  allow_keyword_prefix if key_word in description]):
+                    description_status.append("ok")
                 else:
-                    description_status.append("NG-標示")
+                    description_status.append("NG-關鍵字")
 
             count_rows = len(crawler_df.index)
             reply_days = crawler_df["回覆天數"].values.tolist()
@@ -192,8 +189,7 @@ class Crawler:
             self._clean_unless_data()
 
         # appended esh df to history dataframe
-        new_dataframe = self.raw_dataframe.append(crawler_df, ignore_index=True)
-
+        new_dataframe = pd.concat([self.raw_dataframe, crawler_df]).drop_duplicates(ignore_index=True, subset=['異常單編號'], keep='last')
 
         try:
             new_dataframe.to_excel(self.crawler["xlsx_name"], sheet_name='ESH_RawData', index=False)

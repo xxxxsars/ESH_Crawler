@@ -66,7 +66,7 @@ class Alarm_mail:
     def send_wrong_format_mail(self):
         mail_subject = '環安申請單格式錯誤警告'
         alert_data = (self.history_dataframe[
-            (self.history_dataframe["關鍵字"] != "ok") & (
+            (self.history_dataframe["關鍵字"] != "ok") & (self.history_dataframe["表單狀態"] != "已結案") & (
                     pd.to_datetime(self.history_dataframe['發現日期']) > self.lunch_date)])
         recipient_list = [department + self.mail_suffix for department in alert_data["提出單位"].values.tolist()]
         system_ids = alert_data["異常單系統編號"].values.tolist()
@@ -74,7 +74,7 @@ class Alarm_mail:
         if not alert_data.empty:
             for index in range(len(alert_data)):
                 detail_url = self.detail_url_prefix + str(system_ids[index])
-                self._mail(mail_subject, "wrong_format", detail_url, [recipient_list[index]])
+                # self._mail(mail_subject, "wrong_format", detail_url, [recipient_list[index]])
         else:
             print("All esh table formats are correct.")
 
