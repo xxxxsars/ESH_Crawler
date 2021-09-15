@@ -85,10 +85,13 @@ def read_history_esh(config_path: str):
     files = show_all_xlsx(config_path)
     if files:
         merge_df = pd.DataFrame()
-        for file in show_all_xlsx('setting.ini'):
+        for file in files:
             merge_df = pd.concat([merge_df, faster_read_excel(file)])
         # remove duplicates data
         merge_df = merge_df.drop_duplicates(ignore_index=True, subset=['異常單系統編號'], keep='last')
+        # clean tmp xlsx
+        if re.search('_\d+\.xlsx',file):
+            os.remove(file)
         return merge_df
     else:
         return pd.DataFrame()
@@ -122,13 +125,13 @@ def show_all_xlsx(config_path: str) -> list[str]:
 
     for f in files:
         full_path = os.path.join(root_path, f)
-        if os.path.isfile(full_path) and re.search(f'^{file_prefix}', f) and re.search("xlsx$", f):
+        if os.path.isfile(full_path) and re.search(f'^{file_prefix}.+xlsx$', f):
             xlsx_files.append(full_path)
-
-    assert len(xlsx_files) > 0, "Your root path didn't had any matched files."
 
     return xlsx_files
 
 
 if __name__ == "__main__":
-    print(load_setting("setting.ini"))
+    # print(read_history_esh("setting.ini"))
+
+    print(read_history_esh('setting.ini'))
