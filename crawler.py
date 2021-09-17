@@ -1,4 +1,6 @@
 import datetime
+import logging
+
 import handler
 import json
 import os
@@ -196,6 +198,7 @@ class Crawler:
         except Exception as e:
             split_path = os.path.splitext(self.crawler["xlsx_name"])
             tmp_file_name = f'{split_path[0]}_{"{:.0f}".format(datetime.datetime.now().timestamp())}{split_path[1]}'
+            logging.error(f"{e}, it will be saved in {tmp_file_name}")
             new_dataframe.to_excel(tmp_file_name, sheet_name='ESH_RawData', index=False)
             return tmp_file_name
 

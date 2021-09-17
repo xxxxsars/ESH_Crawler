@@ -74,7 +74,7 @@ class Alarm_mail:
         if not alert_data.empty:
             for index in range(len(alert_data)):
                 detail_url = self.detail_url_prefix + str(system_ids[index])
-                # self._mail(mail_subject, "wrong_format", detail_url, [recipient_list[index]])
+                self._mail(mail_subject, "wrong_format", detail_url, [recipient_list[index]])
         else:
             print("All esh table formats are correct.")
 
